@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using cw3.DAL;
 using cw3.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Data.SqlClient;
+
 
 namespace cw3.Controllers
 {
@@ -19,29 +21,74 @@ namespace cw3.Controllers
         {
             _dbService = dbService;
         }
-
+        /*
         [HttpGet]
-        public IActionResult GetStudent(string orderBy)
+        public IActionResult GetStudent()
+
         {
             return Ok(_dbService.GetStudent());
         }
+        */
 
-        [HttpGet("{id}")]
-        public IActionResult GetStudent(int id)
+        
+                [HttpGet]
+                public IActionResult GetStudent() 
+                {
+
+                    var list = new List<Student>();
+                        using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s13777;Integrated Security=True"))
+                        using(var com = new SqlCommand())
+                    {
+                        com.Connection = con;
+                        com.CommandText = "SELECT * FROM Student";
+
+                        con.Open();
+                        SqlDataReader dr = com.ExecuteReader();
+                        while (dr.Read())
+                        {
+                            var st = new Student();
+                         st.FirstName = dr["FirstName"].ToString();
+                         st.LastName = dr["LastName"].ToString();
+                         st.StudiesName = dr["Name"].ToString();
+                         st.Semester = dr["Semester"].ToString();
+                         list.Add(st);
+                        }
+                    }
+                    return Ok(list);
+                }
+                
+
+        [HttpGet("{indexNumber}")]
+        public IActionResult GetStudent(String indexNumber)
         {
-            if (id == 1)
-            {
-                return Ok("Kowalski");
-            } else if (id == 2)
-            {
-                return Ok("Malewski");
-            } else if (id == 3)
-            {
-                return Ok("Andrzejewski");
-            }
-            return NotFound("Nie znaleziono studenta!");
-        }
 
+            var lista = new List<Student>();
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s13777;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "SELECT Student.FirstName, Student.LastName, Studies.Name, Enrollment.Semester FROM Student, Studies, Enrollment WHERE Student.IdEnrollment = Enrollment.IdEnrollment AND Studies.IdStudy = Enrollment.IdStudy AND IndexNumber=@index";
+                com.Parameters.AddWithValue("index", indexNumber);
+
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    var st = new Student();
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    st.StudiesName = dr["Name"].ToString();
+                    st.Semester = dr["Semester"].ToString();
+                    lista.Add(st);
+                    return Ok(lista);
+                }
+            }
+            return NotFound();
+        }
+        
+       
+
+/*
         [HttpPost]
         public IActionResult CreateStudent(Student student)
         {
@@ -51,6 +98,7 @@ namespace cw3.Controllers
             return Ok(student);
 
         }
+        
 
         [HttpDelete("{id}")]
         public IActionResult DeleteStudent(int id)
@@ -73,7 +121,7 @@ namespace cw3.Controllers
             }
             return NotFound("Nie ma takiego studenta.");
         }
-
+        */
 
     }
 }
